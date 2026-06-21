@@ -1,58 +1,71 @@
 // ============================================================
 //  Grace Community Church — App Logic
-//  Front-end demo build. Mock data only — no real backend yet.
-//  TODO markers show exactly where to wire in real API calls
-//  once authorization / database is ready.
+//  Live backend: Supabase (auth + database).
+//  Formspree still sends email notifications alongside writes.
+//
+//  Tables used (see supabase/schema.sql):
+//    profiles, sessions, prayers, threads, replies
+//
+//  Calendar "events" and "news" are still local arrays for now —
+//  they weren't part of this migration. Bible study sessions
+//  DO feed into the calendar view (merged at render time).
 // ============================================================
 
-const CHURCH_NAME = 'Grace Community Church'; // single source of truth for the name
+const CHURCH_NAME = 'Grace Community Church';
+
+// ------------------------------------------------------------
+// Supabase client
+// ------------------------------------------------------------
+const SUPABASE_URL = 'https://kdbwaowlwjwxrxdpzaxg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_0mx8qIQwweVZTu7J9SPoJg_HHzXt-8P';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ------------------------------------------------------------
+// Formspree — still used as an email notification channel
+// alongside real database writes (per your request: both).
+// ------------------------------------------------------------
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xpqgaggl';
+
+async function sendToFormspree(payload) {
+  try {
+    const res = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      console.error('Formspree submission failed:', data || res.statusText);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Formspree network error:', err);
+    return false;
+  }
+}
 
 const AVATAR_COLORS = ['#534AB7', '#EF9F27', '#1D9E75', '#D85A30', '#D4537E', '#378ADD'];
 
 // ------------------------------------------------------------
-// Mock "current user" / auth state
-// TODO: replace with real session/auth (e.g. JWT, cookie session)
+// Auth state — now backed by a real Supabase session.
+// currentUser shape: { id, email, name }  (name comes from profiles table)
 // ------------------------------------------------------------
-let currentUser = null; // null = logged out
-
-const mockUsers = [
-  { name: 'Jane Doe', email: 'jane@example.com', password: 'demo123' },
-];
+let currentUser = null;
+let currentProfile = null; // raw row from `profiles`
 
 // ------------------------------------------------------------
-// Mock data stores
-// TODO: replace each of these with GET/POST/DELETE calls to your API
+// Local-only data (not yet migrated to Supabase)
 // ------------------------------------------------------------
 
 const events = [
   { id: 1, title: 'Sunday Worship Service', date: '2026-06-21', time: '09:30', type: 'service' },
-  { id: 2, title: 'Bible Study: Romans 1–3', date: '2026-06-24', time: '19:00', type: 'study' },
-  { id: 3, title: 'Youth Group Game Night', date: '2026-06-26', time: '18:00', type: 'event' },
-  { id: 4, title: 'Sunday Worship Service', date: '2026-06-28', time: '09:30', type: 'service' },
-  { id: 5, title: 'Prayer & Worship Night', date: '2026-06-30', time: '19:30', type: 'event' },
-  { id: 6, title: 'Bible Study: Psalms', date: '2026-07-01', time: '19:00', type: 'study' },
-  { id: 7, title: 'Community Food Drive', date: '2026-07-04', time: '10:00', type: 'event' },
+  { id: 2, title: 'Youth Group Game Night', date: '2026-06-26', time: '18:00', type: 'event' },
+  { id: 3, title: 'Sunday Worship Service', date: '2026-06-28', time: '09:30', type: 'service' },
+  { id: 4, title: 'Prayer & Worship Night', date: '2026-06-30', time: '19:30', type: 'event' },
+  { id: 5, title: 'Community Food Drive', date: '2026-07-04', time: '10:00', type: 'event' },
 ];
-
-const sessions = [
-  { id: 1, title: 'Book of Romans, Ch. 1–3', leader: 'Pastor James', date: '2026-06-24', time: '19:00', location: 'Fellowship Hall', format: 'In-person', notes: 'Bring your study Bible' },
-  { id: 2, title: 'Psalms of Praise', leader: 'Deacon Maria', date: '2026-07-01', time: '10:30', location: 'Zoom', format: 'Online', notes: 'Link sent via email' },
-  { id: 3, title: 'Sermon on the Mount', leader: 'Elder Thomas', date: '2026-07-05', time: '18:30', location: 'Room 104', format: 'Hybrid', notes: '' },
-];
-let nextSessionId = 4;
-let sessionFilter = 'all';
-
-const threads = [
-  { id: 1, author: 'Pastor James', body: "This Sunday we're starting a new series on the Sermon on the Mount. Come with your questions — we'll be wrestling with some hard teachings together.", time: '2 hours ago', likes: 14, liked: false, pinned: true, replies: [
-    { author: 'Maria G.', body: "So excited for this series! Romans really stretched me." },
-  ]},
-  { id: 2, author: 'Sarah K.', body: "Does anyone have recommendations for a good study Bible for someone newer to faith? Want to get my husband one for his birthday.", time: '5 hours ago', likes: 6, liked: false, pinned: false, replies: [
-    { author: 'Tom R.', body: "The NIV Study Bible is a great starting point — clear notes without being overwhelming." },
-    { author: 'Maria G.', body: "Seconding that! Also check if the church bookstore has any in stock." },
-  ]},
-  { id: 3, author: 'David Park', body: "Grateful for this community. Moved here three months ago and the Wednesday study group has truly become family.", time: '1 day ago', likes: 22, liked: false, pinned: false, replies: [] },
-];
-let nextThreadId = 4;
 
 const news = [
   { id: 1, title: 'Building Fund Reaches 75% of Goal', excerpt: 'Thanks to the incredible generosity of our church family, we have officially reached 75% of our building fund goal. Here is what comes next.', date: 'June 18, 2026', img: 'https://images.pexels.com/photos/8468459/pexels-photo-8468459.jpeg?auto=compress&cs=tinysrgb&w=900', featured: true },
@@ -61,14 +74,14 @@ const news = [
   { id: 4, title: 'Food Pantry Restocked for the Season', excerpt: 'Thank you to everyone who donated during our spring drive — our shelves are full heading into summer.', date: 'June 8, 2026', img: 'https://images.pexels.com/photos/6646883/pexels-photo-6646883.jpeg?auto=compress&cs=tinysrgb&w=600' },
 ];
 
-const prayers = [
-  { id: 1, name: 'Anonymous', text: 'Please pray for my mother as she recovers from surgery this week. She is in good spirits but the road ahead is long.', count: 18, prayed: false, answered: false },
-  { id: 2, name: 'Michael T.', text: 'Pray for wisdom as I navigate a difficult decision at work. I want to honor God in how I handle this.', count: 9, prayed: false, answered: false },
-  { id: 3, name: 'Anonymous', text: 'Praying for peace in our home — my family has been going through a hard season lately.', count: 24, prayed: false, answered: false },
-  { id: 4, name: 'Linda P.', text: 'Update: my son\'s test results came back clear! Praise God. Thank you all for praying.', count: 41, prayed: false, answered: true },
-  { id: 5, name: 'Anonymous', text: 'Please keep our missionaries overseas in your prayers — pray for safety and open hearts.', count: 13, prayed: false, answered: false },
-];
-let nextPrayerId = 6;
+// ------------------------------------------------------------
+// Live data caches — populated from Supabase, re-fetched after writes
+// ------------------------------------------------------------
+let sessions = [];
+let prayers = [];
+let threads = [];
+
+let sessionFilter = 'all';
 
 // ============================================================
 // Navigation
@@ -107,13 +120,25 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+function showAuthStatus(msg, isError) {
+  const el = document.getElementById('authStatusMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = isError ? 'var(--red-bg)' : 'var(--purple-50)';
+  el.style.color = isError ? 'var(--red-text)' : 'var(--purple-900)';
+}
+function clearAuthStatus() {
+  document.getElementById('authStatusMsg').style.display = 'none';
+}
+
 // ============================================================
-// Auth (mock)
-// TODO: replace with real backend auth — hash passwords server-side,
-// never store plaintext, issue a real session token / cookie.
+// Auth — real Supabase Auth (email+password and magic link)
+// Email confirmation is required (configured in Supabase dashboard:
+// Authentication → Providers → Email → Confirm email = ON).
 // ============================================================
 
 function openAuthModal(tab) {
+  clearAuthStatus();
   document.getElementById('authModal').classList.add('open');
   switchAuthTab(tab || 'login');
 }
@@ -122,11 +147,15 @@ function closeAuthModal() {
 }
 function switchAuthTab(tab) {
   const isLogin = tab === 'login';
+  clearAuthStatus();
   document.getElementById('loginTab').classList.toggle('active', isLogin);
   document.getElementById('signupTab').classList.toggle('active', !isLogin);
   document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
   document.getElementById('signupForm').style.display = isLogin ? 'none' : 'block';
   document.getElementById('authModalTitle').textContent = isLogin ? 'Welcome back' : 'Create your account';
+  document.getElementById('authModalFoot').textContent = isLogin
+    ? "Haven't confirmed your email yet? Check your inbox for the link."
+    : "You'll need to confirm your email before logging in.";
 }
 
 document.getElementById('openLogin').addEventListener('click', () => openAuthModal('login'));
@@ -135,54 +164,142 @@ document.getElementById('authModal').addEventListener('click', (e) => {
   if (e.target.id === 'authModal') closeAuthModal();
 });
 
-function login() {
+async function login() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginSubmitBtn');
 
   if (!email || !password) {
-    showToast('Enter your email and password.');
+    showAuthStatus('Enter your email and password.', true);
     return;
   }
 
-  // TODO: replace with POST /api/auth/login
-  let user = mockUsers.find((u) => u.email === email && u.password === password);
-  if (!user) {
-    // demo convenience: auto-create a session for any email/password so testing is frictionless
-    user = { name: email.split('@')[0], email, password };
-    mockUsers.push(user);
+  btn.disabled = true;
+  btn.textContent = 'Logging in...';
+  clearAuthStatus();
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  btn.disabled = false;
+  btn.textContent = 'Log in';
+
+  if (error) {
+    showAuthStatus(error.message, true);
+    return;
   }
-  setCurrentUser(user);
+
   closeAuthModal();
-  showToast(`Welcome back, ${user.name}!`);
+  await loadCurrentUser();
+  showToast(`Welcome back, ${currentUser.name}!`);
+  await refreshAllLiveData();
 }
 
-function signup() {
+async function sendMagicLink() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const btn = document.getElementById('magicLinkBtn');
+
+  if (!email) {
+    showAuthStatus('Enter your email above first, then tap this.', true);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href },
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Email me a login link';
+
+  if (error) {
+    showAuthStatus(error.message, true);
+    return;
+  }
+  showAuthStatus(`Check ${email} for a login link.`, false);
+}
+
+async function signup() {
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
+  const btn = document.getElementById('signupSubmitBtn');
 
   if (!name || !email || !password) {
-    showToast('Please fill in all fields.');
+    showAuthStatus('Please fill in all fields.', true);
+    return;
+  }
+  if (password.length < 6) {
+    showAuthStatus('Password must be at least 6 characters.', true);
     return;
   }
 
-  // TODO: replace with POST /api/auth/signup
-  const user = { name, email, password };
-  mockUsers.push(user);
-  setCurrentUser(user);
-  closeAuthModal();
-  showToast(`Welcome to ${CHURCH_NAME}, ${name}!`);
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+  clearAuthStatus();
+
+  // display_name is passed as user metadata, picked up by the
+  // handle_new_user() trigger in schema.sql to populate `profiles`.
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { display_name: name },
+      emailRedirectTo: window.location.href,
+    },
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Create account';
+
+  if (error) {
+    showAuthStatus(error.message, true);
+    return;
+  }
+
+  if (data.session) {
+    // email confirmation is OFF in the Supabase project (shouldn't happen
+    // given your settings, but handled just in case)
+    closeAuthModal();
+    await loadCurrentUser();
+    showToast(`Welcome to ${CHURCH_NAME}, ${name}!`);
+  } else {
+    showAuthStatus(`Almost there — check ${email} to confirm your account before logging in.`, false);
+  }
 }
 
-function logout() {
+async function logout() {
+  await sb.auth.signOut();
   currentUser = null;
+  currentProfile = null;
   updateAuthUI();
   goToPage('home');
   showToast('Logged out.');
 }
 
-function setCurrentUser(user) {
-  currentUser = user;
+async function loadCurrentUser() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) {
+    currentUser = null;
+    currentProfile = null;
+    updateAuthUI();
+    return;
+  }
+
+  const { data: profile } = await sb
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  currentProfile = profile;
+  currentUser = {
+    id: user.id,
+    email: user.email,
+    name: profile ? profile.display_name : (user.email ? user.email.split('@')[0] : 'Member'),
+  };
   updateAuthUI();
 }
 
@@ -212,8 +329,8 @@ function updateAuthUI() {
     document.getElementById('settingsName').value = currentUser.name;
     document.getElementById('settingsEmail').value = currentUser.email;
 
-    const myThreads = threads.filter((t) => t.author === currentUser.name).length;
-    const myPrayers = prayers.filter((p) => p.name === currentUser.name).length;
+    const myThreads = threads.filter((t) => t.author_id === currentUser.id).length;
+    const myPrayers = prayers.filter((p) => p.submitted_by === currentUser.id).length;
     document.getElementById('profileThreadCount').textContent = myThreads;
     document.getElementById('profilePrayerCount').textContent = myPrayers;
   } else {
@@ -224,13 +341,26 @@ function updateAuthUI() {
 
 document.getElementById('openProfile').addEventListener('click', () => goToPage('profile'));
 
-function saveProfile() {
+async function saveProfile() {
   if (!currentUser) return;
-  currentUser.name = document.getElementById('settingsName').value.trim() || currentUser.name;
-  currentUser.email = document.getElementById('settingsEmail').value.trim() || currentUser.email;
-  // TODO: replace with PATCH /api/users/:id
+  const newName = document.getElementById('settingsName').value.trim();
+  if (!newName) { showToast('Display name cannot be empty.'); return; }
+
+  const { error } = await sb
+    .from('profiles')
+    .update({ display_name: newName })
+    .eq('id', currentUser.id);
+
+  if (error) {
+    showToast('Could not update profile: ' + error.message);
+    return;
+  }
+
+  currentUser.name = newName;
   updateAuthUI();
   showToast('Profile updated.');
+  // Note: email changes require sb.auth.updateUser({ email }) and a
+  // re-confirmation step — left out here since you didn't ask for that yet.
 }
 
 function requireLogin(actionLabel) {
@@ -243,17 +373,28 @@ function requireLogin(actionLabel) {
 }
 
 // ============================================================
-// Calendar
+// Calendar  (local "events" + live "sessions" merged for display)
 // ============================================================
 
-let calMonth = 5; // June = 5 (0-indexed) — matches current demo date context
+let calMonth = 5;
 let calYear = 2026;
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
+function allCalendarItems() {
+  const sessionEvents = sessions.map((s) => ({
+    id: 'session-' + s.id,
+    title: s.title,
+    date: s.session_date,
+    time: s.session_time,
+    type: 'study',
+  }));
+  return [...events, ...sessionEvents];
+}
+
 function eventsOnDate(dateStr) {
-  return events.filter((e) => e.date === dateStr);
+  return allCalendarItems().filter((e) => e.date === dateStr);
 }
 
 function renderCalendar() {
@@ -273,16 +414,13 @@ function renderCalendar() {
   const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  // leading muted days
   for (let i = firstDay - 1; i >= 0; i--) {
     grid.appendChild(makeDayCell(daysInPrevMonth - i, true));
   }
-  // current month days
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     grid.appendChild(makeDayCell(d, false, dateStr === todayStr, eventsOnDate(dateStr)));
   }
-  // trailing muted days to fill the grid to a multiple of 7
   const totalCells = firstDay + daysInMonth;
   const trailing = (7 - (totalCells % 7)) % 7;
   for (let d = 1; d <= trailing; d++) {
@@ -316,7 +454,7 @@ function makeDayCell(num, muted, isToday, dayEvents) {
 function renderCalSideList() {
   const list = document.getElementById('calSideList');
   const todayStr = new Date().toISOString().slice(0, 10);
-  const upcoming = events
+  const upcoming = allCalendarItems()
     .filter((e) => e.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 8);
@@ -345,7 +483,7 @@ function renderCalSideList() {
 function renderHomeUpcoming() {
   const list = document.getElementById('homeUpcomingList');
   const todayStr = new Date().toISOString().slice(0, 10);
-  const upcoming = events.filter((e) => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+  const upcoming = allCalendarItems().filter((e) => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
 
   if (!upcoming.length) {
     list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🗓</div><p>Nothing scheduled yet.</p></div>`;
@@ -391,7 +529,7 @@ function formatDate(d) {
 }
 
 // ============================================================
-// Bible Study Scheduler
+// Bible Study Scheduler — live Supabase table `sessions`
 // ============================================================
 
 function getBadgeClass(format) {
@@ -400,11 +538,24 @@ function getBadgeClass(format) {
   return 'badge-purple';
 }
 
+async function loadSessions() {
+  const { data, error } = await sb
+    .from('sessions')
+    .select('*')
+    .order('session_date', { ascending: true });
+
+  if (error) {
+    console.error('Failed to load sessions:', error.message);
+    return;
+  }
+  sessions = data;
+}
+
 function renderSessions() {
   const list = document.getElementById('session-list');
   const visible = sessions
     .filter((s) => sessionFilter === 'all' || s.format === sessionFilter)
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.session_date.localeCompare(b.session_date));
 
   if (!visible.length) {
     list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📖</div><h4>No sessions yet</h4><p>Add one using the form.</p></div>`;
@@ -416,8 +567,8 @@ function renderSessions() {
       <div class="session-info">
         <div class="session-title">${s.title}</div>
         <div class="session-meta">
-          <span>${formatDate(s.date)}${s.time ? ' · ' + formatTime(s.time) : ''}</span>
-          <span>${s.location}</span>
+          <span>${formatDate(s.session_date)}${s.session_time ? ' · ' + formatTime(s.session_time) : ''}</span>
+          <span>${s.location || ''}</span>
         </div>
         <div class="session-tags">
           <span class="badge ${getBadgeClass(s.format)}">${s.format}</span>
@@ -425,12 +576,12 @@ function renderSessions() {
         </div>
         ${s.notes ? `<div class="session-notes">${s.notes}</div>` : ''}
       </div>
-      <button class="icon-btn" onclick="deleteSession(${s.id})">✕</button>
+      ${currentUser && currentUser.id === s.created_by ? `<button class="icon-btn" onclick="deleteSession(${s.id})">✕</button>` : ''}
     </div>
   `).join('');
 }
 
-function addSession() {
+async function addSession() {
   if (!requireLogin('schedule a Bible study session')) return;
 
   const title = document.getElementById('inp-title').value.trim();
@@ -440,30 +591,72 @@ function addSession() {
   const location = document.getElementById('inp-location').value.trim();
   const format = document.getElementById('inp-format').value;
   const notes = document.getElementById('inp-notes').value.trim();
+  const submitBtn = document.getElementById('sessionSubmitBtn');
 
   if (!title || !leader || !date) {
     showToast('Please fill in the title, leader, and date.');
     return;
   }
 
-  // TODO: replace with POST /api/sessions
-  sessions.push({ id: nextSessionId++, title, leader, date, time, location, format, notes });
-  events.push({ id: 1000 + nextSessionId, title, date, time, type: 'study' });
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Adding...';
+
+  const { error } = await sb.from('sessions').insert({
+    title,
+    leader,
+    session_date: date,
+    session_time: time || null,
+    location: location || null,
+    format,
+    notes: notes || null,
+    created_by: currentUser.id,
+  });
+
+  if (error) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Add session';
+    showToast('Could not add session: ' + error.message);
+    return;
+  }
+
+  await loadSessions();
+  renderSessions();
+  renderCalendar();
+  renderHomeUpcoming();
+
+  // Email notification, in parallel with the DB write already completed above
+  const emailed = await sendToFormspree({
+    _subject: `New Bible Study Scheduled: ${title}`,
+    form_type: 'Bible Study Session Scheduled',
+    title,
+    leader,
+    date,
+    time: time || 'Not specified',
+    location: location || 'Not specified',
+    format,
+    notes: notes || 'None',
+    scheduled_by: `${currentUser.name} (${currentUser.email})`,
+  });
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Add session';
 
   ['inp-title','inp-leader','inp-date','inp-time','inp-location','inp-notes'].forEach((id) => {
     document.getElementById(id).value = '';
   });
+
+  showToast(emailed
+    ? 'Bible study session added.'
+    : 'Session added — but the email notification failed to send.');
+}
+
+async function deleteSession(id) {
+  const { error } = await sb.from('sessions').delete().eq('id', id);
+  if (error) { showToast('Could not delete session: ' + error.message); return; }
+  await loadSessions();
   renderSessions();
   renderCalendar();
   renderHomeUpcoming();
-  showToast('Bible study session added.');
-}
-
-function deleteSession(id) {
-  // TODO: replace with DELETE /api/sessions/:id
-  const idx = sessions.findIndex((s) => s.id === id);
-  if (idx > -1) sessions.splice(idx, 1);
-  renderSessions();
 }
 
 function setFilter(val, btn) {
@@ -474,34 +667,79 @@ function setFilter(val, btn) {
 }
 
 // ============================================================
-// Discussion Board
+// Discussion Board — live Supabase tables `threads` + `replies`
 // ============================================================
+
+async function loadThreads() {
+  const { data: threadRows, error: threadErr } = await sb
+    .from('threads')
+    .select('*, profiles(display_name)')
+    .order('is_pinned', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (threadErr) {
+    console.error('Failed to load threads:', threadErr.message);
+    return;
+  }
+
+  const { data: replyRows, error: replyErr } = await sb
+    .from('replies')
+    .select('*, profiles(display_name)')
+    .order('created_at', { ascending: true });
+
+  if (replyErr) {
+    console.error('Failed to load replies:', replyErr.message);
+  }
+
+  threads = threadRows.map((t) => ({
+    ...t,
+    author_name: t.profiles ? t.profiles.display_name : 'Church Member',
+    replies: (replyRows || [])
+      .filter((r) => r.thread_id === t.id)
+      .map((r) => ({ ...r, author_name: r.profiles ? r.profiles.display_name : 'Church Member' })),
+  }));
+}
+
+function timeAgo(isoString) {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min${mins === 1 ? '' : 's'} ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
 
 function renderThreads() {
   const list = document.getElementById('threadList');
-  const sorted = [...threads].sort((a, b) => (b.pinned - a.pinned));
 
-  list.innerHTML = sorted.map((t) => {
-    const color = getAvatarColor(t.author);
+  if (!threads.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💬</div><h4>No posts yet</h4><p>Be the first to start a conversation.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = threads.map((t) => {
+    const color = getAvatarColor(t.author_name);
     return `
       <div class="thread-card">
         <div class="thread-top">
-          <div class="avatar" style="background:${color}">${getInitials(t.author)}</div>
+          <div class="avatar" style="background:${color}">${getInitials(t.author_name)}</div>
           <div>
-            <div class="thread-author">${t.author} ${t.pinned ? '<span class="badge badge-gold pinned-tag">📌 Pinned</span>' : ''}</div>
-            <div class="thread-meta">${t.time}</div>
+            <div class="thread-author">${t.author_name} ${t.is_pinned ? '<span class="badge badge-gold pinned-tag">📌 Pinned</span>' : ''}</div>
+            <div class="thread-meta">${timeAgo(t.created_at)}</div>
           </div>
         </div>
-        <div class="thread-body">${t.body}</div>
+        <div class="thread-body">${escapeHtml(t.body)}</div>
         <div class="thread-actions">
-          <button class="thread-action ${t.liked ? 'liked' : ''}" onclick="toggleLike(${t.id})">🤍 ${t.likes}</button>
+          <button class="thread-action" onclick="toggleLike(${t.id}, ${t.likes})">🤍 ${t.likes}</button>
           <button class="thread-action" onclick="toggleReplies(${t.id})">💬 ${t.replies.length} ${t.replies.length === 1 ? 'reply' : 'replies'}</button>
         </div>
         <div class="thread-replies" id="replies-${t.id}">
           ${t.replies.map((r) => `
             <div class="reply-item">
-              <div class="avatar" style="background:${getAvatarColor(r.author)}">${getInitials(r.author)}</div>
-              <div class="reply-body"><span class="reply-author">${r.author}</span><br>${r.body}</div>
+              <div class="avatar" style="background:${getAvatarColor(r.author_name)}">${getInitials(r.author_name)}</div>
+              <div class="reply-body"><span class="reply-author">${r.author_name}</span><br>${escapeHtml(r.body)}</div>
             </div>
           `).join('')}
           ${currentUser ? `
@@ -516,35 +754,57 @@ function renderThreads() {
   }).join('');
 }
 
-function postThread() {
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function postThread() {
   if (!requireLogin('post to the discussion board')) return;
   const input = document.getElementById('threadInput');
   const body = input.value.trim();
   if (!body) { showToast('Write something before posting.'); return; }
 
-  // TODO: replace with POST /api/threads
-  threads.unshift({ id: nextThreadId++, author: currentUser.name, body, time: 'Just now', likes: 0, liked: false, pinned: false, replies: [] });
+  const { error } = await sb.from('threads').insert({
+    author_id: currentUser.id,
+    body,
+  });
+
+  if (error) { showToast('Could not post: ' + error.message); return; }
+
   input.value = '';
+  await loadThreads();
   renderThreads();
   showToast('Posted to the discussion board.');
 }
 
-function postReply(threadId) {
+async function postReply(threadId) {
+  if (!requireLogin('reply')) return;
   const input = document.getElementById(`replyInput-${threadId}`);
   const body = input.value.trim();
   if (!body) return;
-  const thread = threads.find((t) => t.id === threadId);
-  // TODO: replace with POST /api/threads/:id/replies
-  thread.replies.push({ author: currentUser.name, body });
+
+  const { error } = await sb.from('replies').insert({
+    thread_id: threadId,
+    author_id: currentUser.id,
+    body,
+  });
+
+  if (error) { showToast('Could not post reply: ' + error.message); return; }
+
+  await loadThreads();
   renderThreads();
   document.getElementById(`replies-${threadId}`).classList.add('open');
 }
 
-function toggleLike(id) {
+async function toggleLike(id, currentLikes) {
   if (!requireLogin('like a post')) return;
-  const t = threads.find((t) => t.id === id);
-  t.liked = !t.liked;
-  t.likes += t.liked ? 1 : -1;
+  // Note: this is a simple increment, not a per-user like toggle —
+  // tracking *who* liked what would need a separate `thread_likes` table.
+  const { error } = await sb.from('threads').update({ likes: currentLikes + 1 }).eq('id', id);
+  if (error) { showToast('Could not like post: ' + error.message); return; }
+  await loadThreads();
   renderThreads();
 }
 
@@ -553,7 +813,7 @@ function toggleReplies(id) {
 }
 
 // ============================================================
-// News & Events
+// News & Events (local data — unchanged)
 // ============================================================
 
 function renderNews() {
@@ -583,8 +843,22 @@ function renderNews() {
 }
 
 // ============================================================
-// Prayer Wall
+// Prayer Wall — live Supabase table `prayers`
+// Open submission (logged in or not), per your earlier instructions.
 // ============================================================
+
+async function loadPrayers() {
+  const { data, error } = await sb
+    .from('prayers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load prayers:', error.message);
+    return;
+  }
+  prayers = data;
+}
 
 function renderPrayers() {
   const grid = document.getElementById('prayerGrid');
@@ -594,48 +868,74 @@ function renderPrayers() {
   }
 
   grid.innerHTML = prayers.map((p) => `
-    <div class="prayer-card ${p.answered ? 'answered' : ''}">
+    <div class="prayer-card ${p.is_answered ? 'answered' : ''}">
       <div class="prayer-card-head">
-        <span class="prayer-name">${p.name}</span>
-        ${p.answered ? '<span class="badge badge-green">Answered</span>' : ''}
+        <span class="prayer-name">${p.display_name}</span>
+        ${p.is_answered ? '<span class="badge badge-green">Answered</span>' : ''}
       </div>
-      <div class="prayer-body">${p.text}</div>
+      <div class="prayer-body">${escapeHtml(p.body)}</div>
       <div class="prayer-foot">
-        <button class="prayer-count-btn ${p.prayed ? 'prayed' : ''}" onclick="togglePrayed(${p.id})">🙏 ${p.count} praying</button>
+        <button class="prayer-count-btn" onclick="togglePrayed(${p.id}, ${p.prayer_count})">🙏 ${p.prayer_count} praying</button>
       </div>
     </div>
   `).join('');
 }
 
-function submitPrayer() {
+async function submitPrayer() {
   const anon = document.getElementById('prayerAnon').checked;
   const nameInput = document.getElementById('prayerName').value.trim();
   const text = document.getElementById('prayerText').value.trim();
+  const submitBtn = document.getElementById('prayerSubmitBtn');
 
   if (!text) { showToast('Please share your prayer request.'); return; }
   if (!anon && !nameInput) { showToast('Add your name, or check "submit anonymously."'); return; }
 
-  // TODO: replace with POST /api/prayers
-  prayers.unshift({
-    id: nextPrayerId++,
-    name: anon ? 'Anonymous' : nameInput,
-    text,
-    count: 0,
-    prayed: false,
-    answered: false,
+  const displayName = anon ? 'Anonymous' : nameInput;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  const { error } = await sb.from('prayers').insert({
+    display_name: displayName,
+    is_anonymous: anon,
+    body: text,
+    submitted_by: currentUser ? currentUser.id : null,
   });
+
+  if (error) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit prayer request';
+    showToast('Could not submit: ' + error.message);
+    return;
+  }
+
+  await loadPrayers();
+  renderPrayers();
+
+  const emailed = await sendToFormspree({
+    _subject: `New Prayer Request${anon ? ' (Anonymous)' : ' from ' + nameInput}`,
+    form_type: 'Prayer Request',
+    name: anon ? 'Anonymous (name withheld by request)' : nameInput,
+    submitted_anonymously: anon ? 'Yes' : 'No',
+    message: text,
+  });
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Submit prayer request';
 
   document.getElementById('prayerName').value = '';
   document.getElementById('prayerText').value = '';
   document.getElementById('prayerAnon').checked = false;
-  renderPrayers();
-  showToast('Your prayer request was submitted.');
+
+  showToast(emailed
+    ? 'Your prayer request was submitted.'
+    : 'Added to the wall — but the email notification failed to send.');
 }
 
-function togglePrayed(id) {
-  const p = prayers.find((p) => p.id === id);
-  p.prayed = !p.prayed;
-  p.count += p.prayed ? 1 : -1;
+async function togglePrayed(id, currentCount) {
+  const { error } = await sb.from('prayers').update({ prayer_count: currentCount + 1 }).eq('id', id);
+  if (error) { showToast('Could not update: ' + error.message); return; }
+  await loadPrayers();
   renderPrayers();
 }
 
@@ -643,12 +943,26 @@ function togglePrayed(id) {
 // Init
 // ============================================================
 
+async function refreshAllLiveData() {
+  await Promise.all([loadSessions(), loadThreads(), loadPrayers()]);
+  renderSessions();
+  renderThreads();
+  renderPrayers();
+  renderCalendar();
+  renderHomeUpcoming();
+  updateAuthUI(); // re-run so profile post/prayer counts reflect fresh data
+}
+
 document.getElementById('inp-date').value = new Date().toISOString().slice(0, 10);
 
-renderCalendar();
-renderHomeUpcoming();
-renderSessions();
-renderThreads();
-renderNews();
-renderPrayers();
-updateAuthUI();
+// Keep the UI in sync with auth state changes (login, logout, magic-link
+// redirect landing, token refresh) wherever they originate.
+sb.auth.onAuthStateChange((_event, _session) => {
+  loadCurrentUser();
+});
+
+(async function init() {
+  renderNews(); // local data, no fetch needed
+  await loadCurrentUser();
+  await refreshAllLiveData();
+})();

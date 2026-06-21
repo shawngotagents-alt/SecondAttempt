@@ -229,7 +229,7 @@
             <label>Notes (optional)</label>
             <textarea id="inp-notes" placeholder="Passage reference, materials needed, etc."></textarea>
           </div>
-          <button class="btn btn-primary btn-block" onclick="addSession()">Add session</button>
+          <button class="btn btn-primary btn-block" id="sessionSubmitBtn" onclick="addSession()">Add session</button>
         </div>
 
         <div class="card">
@@ -337,7 +337,7 @@
             <label>Your prayer request</label>
             <textarea id="prayerText" placeholder="Share what's on your heart..."></textarea>
           </div>
-          <button class="btn btn-gold btn-block" onclick="submitPrayer()">Submit prayer request</button>
+          <button class="btn btn-gold btn-block" id="prayerSubmitBtn" onclick="submitPrayer()">Submit prayer request</button>
         </div>
 
         <div class="card">
@@ -462,7 +462,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 Grace Community Church. Demo build — backend &amp; auth coming soon.</span>
+      <span>© 2026 Grace Community Church. All are welcome.</span>
       <span>Built with care.</span>
     </div>
   </div>
@@ -482,6 +482,8 @@
       <button class="modal-tab" id="signupTab" onclick="switchAuthTab('signup')">Sign up</button>
     </div>
 
+    <div id="authStatusMsg" style="display:none;font-size:0.82rem;padding:10px 12px;border-radius:var(--radius-md);margin-bottom:1rem;background:var(--purple-50);color:var(--purple-900)"></div>
+
     <div id="loginForm">
       <div class="field">
         <label>Email</label>
@@ -491,7 +493,9 @@
         <label>Password</label>
         <input type="password" id="loginPassword" placeholder="••••••••" />
       </div>
-      <button class="btn btn-primary btn-block" onclick="login()">Log in</button>
+      <button class="btn btn-primary btn-block" id="loginSubmitBtn" onclick="login()">Log in</button>
+      <div style="text-align:center;margin:0.85rem 0;font-size:0.76rem;color:var(--text-muted)">— or —</div>
+      <button class="btn btn-ghost btn-block" id="magicLinkBtn" onclick="sendMagicLink()">Email me a login link</button>
     </div>
 
     <div id="signupForm" style="display:none">
@@ -506,17 +510,20 @@
       <div class="field">
         <label>Password</label>
         <input type="password" id="signupPassword" placeholder="••••••••" />
+        <div class="field-hint">At least 6 characters.</div>
       </div>
-      <button class="btn btn-primary btn-block" onclick="signup()">Create account</button>
+      <button class="btn btn-primary btn-block" id="signupSubmitBtn" onclick="signup()">Create account</button>
     </div>
 
-    <div class="modal-foot">Demo mode — no real credentials required, this is mock data only.</div>
+    <div class="modal-foot" id="authModalFoot">You'll need to confirm your email before logging in.</div>
   </div>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"><span class="toast-icon">✦</span><span id="toastMsg"></span></div>
 
+<!-- Supabase client SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
