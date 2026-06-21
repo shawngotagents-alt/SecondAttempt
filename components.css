@@ -1,0 +1,333 @@
+/* ============================================================
+   Grace Community Church — Component Stylesheet
+   Calendar, Discussion Board, News & Events, Prayer Wall, Study Scheduler
+   ============================================================ */
+
+/* ============================================================
+   CALENDAR
+   ============================================================ */
+
+.cal-shell {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.cal-title { font-family: var(--font-display); font-size: 1.3rem; }
+.cal-nav { display: flex; align-items: center; gap: 6px; }
+.cal-nav-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.cal-nav-btn:hover { background: var(--purple-100); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.cal-dow {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  padding: 6px;
+  font-size: 0.8rem;
+  position: relative;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.cal-day.muted { opacity: 0.35; }
+.cal-day.today { border-color: var(--purple-700); border-width: 2px; }
+.cal-day-num { font-weight: 600; }
+.cal-day-dots { display: flex; gap: 3px; margin-top: auto; flex-wrap: wrap; }
+.cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+.cal-dot.purple { background: var(--purple-700); }
+.cal-dot.gold { background: var(--gold-500); }
+.cal-dot.green { background: var(--green-text); }
+
+.cal-side-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.9rem; }
+
+.cal-event-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cal-event-item:last-child { border-bottom: none; }
+.cal-event-date {
+  width: 42px; flex-shrink: 0;
+  text-align: center;
+  background: var(--purple-100);
+  border-radius: var(--radius-sm);
+  padding: 5px 0;
+}
+.cal-event-date .d { font-size: 1rem; font-weight: 700; color: var(--purple-900); line-height: 1; }
+.cal-event-date .m { font-size: 0.62rem; text-transform: uppercase; color: var(--purple-700); font-weight: 600; }
+.cal-event-info .t { font-size: 0.85rem; font-weight: 600; line-height: 1.3; }
+.cal-event-info .s { font-size: 0.74rem; color: var(--text-secondary); margin-top: 2px; }
+
+@media (max-width: 880px) {
+  .cal-shell { grid-template-columns: 1fr; }
+  .cal-day { font-size: 0.68rem; }
+}
+
+@media (max-width: 480px) {
+  .cal-grid { gap: 4px; }
+  .cal-day { padding: 3px; font-size: 0.62rem; border-radius: 4px; }
+  .cal-day-num { font-size: 0.68rem; }
+  .cal-dot { width: 4px; height: 4px; }
+  .cal-title { font-size: 1.1rem; }
+  .cal-nav-btn { width: 28px; height: 28px; }
+}
+
+/* ============================================================
+   DISCUSSION BOARD
+   ============================================================ */
+
+.discuss-shell { display: grid; grid-template-columns: 1fr 260px; gap: 1.5rem; align-items: start; }
+
+.thread-composer { margin-bottom: 1.5rem; }
+.thread-composer textarea { min-height: 70px; }
+
+.thread-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1rem;
+}
+.thread-top { display: flex; gap: 10px; margin-bottom: 0.6rem; }
+.avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+.thread-author { font-size: 0.88rem; font-weight: 700; }
+.thread-meta { font-size: 0.74rem; color: var(--text-muted); }
+.thread-body { font-size: 0.92rem; color: var(--ink); line-height: 1.55; margin-bottom: 0.85rem; }
+.thread-actions { display: flex; gap: 1.1rem; }
+.thread-action {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--text-secondary);
+}
+.thread-action:hover { color: var(--purple-700); }
+.thread-action.liked { color: var(--gold-700); }
+
+.thread-replies { margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--line); display: none; }
+.thread-replies.open { display: block; }
+.reply-item { display: flex; gap: 8px; margin-bottom: 0.7rem; }
+.reply-item .avatar { width: 28px; height: 28px; font-size: 0.65rem; }
+.reply-body { font-size: 0.84rem; background: var(--purple-50); padding: 8px 12px; border-radius: var(--radius-md); flex: 1; }
+.reply-author { font-weight: 700; font-size: 0.78rem; }
+
+.pinned-tag { display: inline-flex; align-items: center; gap: 4px; }
+
+@media (max-width: 880px) { .discuss-shell { grid-template-columns: 1fr; } }
+
+@media (max-width: 480px) {
+  .thread-card { padding: 1.1rem; }
+  .thread-actions { gap: 0.9rem; }
+}
+
+/* ============================================================
+   NEWS & EVENTS
+   ============================================================ */
+
+.news-featured {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-bottom: 2rem;
+}
+.news-featured-img { aspect-ratio: 16/11; overflow: hidden; }
+.news-featured-img img { width: 100%; height: 100%; object-fit: cover; }
+.news-featured-body { padding: 2rem; display: flex; flex-direction: column; justify-content: center; background: var(--paper); }
+.news-featured-body h3 { font-family: var(--font-display); font-size: 1.5rem; margin: 0.5rem 0 0.7rem; line-height: 1.2; }
+.news-featured-body p { font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.1rem; }
+.news-date-line { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; }
+
+.news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.news-card { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: var(--paper); }
+.news-card-img { aspect-ratio: 16/10; overflow: hidden; }
+.news-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s var(--ease); }
+.news-card:hover .news-card-img img { transform: scale(1.04); }
+.news-card-body { padding: 1.1rem 1.2rem 1.3rem; }
+.news-card-body h4 { font-family: var(--font-display); font-size: 1.02rem; margin: 0.5rem 0 0.4rem; line-height: 1.25; }
+.news-card-body p { font-size: 0.84rem; color: var(--text-secondary); }
+
+@media (max-width: 880px) {
+  .news-featured { grid-template-columns: 1fr; }
+  .news-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .news-featured-body { padding: 1.4rem 1.25rem; }
+  .news-featured-body h3 { font-size: 1.25rem; }
+}
+
+/* ============================================================
+   PRAYER WALL
+   ============================================================ */
+
+.prayer-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.prayer-form .field-row { display: flex; gap: 10px; }
+.prayer-form .field-row .field { flex: 1; }
+
+.prayer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.prayer-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--purple-500);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.2rem;
+}
+.prayer-card.answered { border-left-color: var(--green-text); }
+.prayer-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+.prayer-name { font-size: 0.82rem; font-weight: 700; }
+.prayer-body { font-size: 0.86rem; color: var(--ink); line-height: 1.5; margin-bottom: 0.9rem; }
+.prayer-foot { display: flex; justify-content: space-between; align-items: center; }
+.prayer-count-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--purple-50);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--purple-900);
+}
+.prayer-count-btn:hover { background: var(--purple-100); }
+.prayer-count-btn.prayed { background: var(--purple-900); color: #fff; border-color: var(--purple-900); }
+
+@media (max-width: 880px) {
+  .prayer-intro { grid-template-columns: 1fr; }
+  .prayer-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .prayer-form .field-row { flex-direction: column; gap: 0; }
+  .prayer-card-head { flex-wrap: wrap; gap: 6px; }
+}
+
+/* ============================================================
+   BIBLE STUDY SCHEDULER (within Calendar tab as sub-section)
+   ============================================================ */
+
+.scheduler-shell { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.4fr); gap: 1.5rem; }
+
+.filter-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-btn {
+  font-size: 0.76rem; padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.filter-btn.active { background: var(--purple-900); color: #fff; border-color: var(--purple-900); }
+
+.session-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.session-info { flex: 1; }
+.session-title { font-size: 0.88rem; font-weight: 700; margin-bottom: 3px; }
+.session-meta { font-size: 0.76rem; color: var(--text-secondary); display: flex; gap: 8px; flex-wrap: wrap; }
+.session-tags { margin-top: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.session-notes { font-size: 0.76rem; color: var(--text-secondary); margin-top: 5px; font-style: italic; }
+
+.icon-btn {
+  background: var(--purple-50);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 9px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+.icon-btn:hover { background: var(--red-bg); color: var(--red-text); }
+
+@media (max-width: 880px) { .scheduler-shell { grid-template-columns: 1fr; } }
+
+@media (max-width: 480px) {
+  .session-item { flex-wrap: wrap; }
+  .session-info { min-width: 0; }
+  .session-title { word-break: break-word; }
+}
+
+/* ============================================================
+   ACCOUNT / PROFILE PANEL
+   ============================================================ */
+
+.profile-shell { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+
+.profile-card { text-align: center; }
+.profile-avatar-lg {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: var(--gold-500);
+  color: var(--gold-700);
+  font-size: 1.6rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1rem;
+}
+.profile-name { font-family: var(--font-display); font-size: 1.2rem; }
+.profile-email { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem; }
+.profile-stats-row { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem; }
+.profile-stat-num { font-weight: 700; font-family: var(--font-display); font-size: 1.1rem; color: var(--purple-900); }
+.profile-stat-label { font-size: 0.7rem; color: var(--text-muted); }
+
+.settings-row { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: 0.88rem; font-weight: 600; }
+.settings-sub { font-size: 0.76rem; color: var(--text-secondary); }
+
+.toggle { position: relative; width: 40px; height: 22px; border-radius: 999px; background: var(--line-strong); border: none; flex-shrink: 0; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.18s var(--ease); }
+.toggle.on { background: var(--purple-700); }
+.toggle.on::after { transform: translateX(18px); }
+
+@media (max-width: 880px) { .profile-shell { grid-template-columns: 1fr; } }
+
+@media (max-width: 480px) {
+  .settings-row { flex-wrap: wrap; gap: 8px; }
+}

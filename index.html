@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grace Community Church</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="components.css" />
+</head>
+<body>
+
+<!-- ============================================================
+     TOP NAV
+     ============================================================ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">✝</span>
+      <span class="brand-text">Grace Community</span>
+    </div>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab-btn active" data-page="home">Home</button>
+      <button class="tab-btn" data-page="calendar">Calendar &amp; Bible Study</button>
+      <button class="tab-btn" data-page="discussion">Discussion</button>
+      <button class="tab-btn" data-page="news">News &amp; Events</button>
+      <button class="tab-btn" data-page="prayer">Prayer Wall</button>
+    </nav>
+
+    <div class="topbar-actions">
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+      <div id="loggedOutActions">
+        <button class="btn btn-ghost btn-sm" id="openLogin">Log in</button>
+        <button class="btn btn-primary btn-sm" id="openSignup">Sign up</button>
+      </div>
+      <div id="loggedInActions" style="display:none">
+        <button class="account-chip" id="openProfile">
+          <span class="account-avatar" id="navAvatar">G</span>
+          <span id="navName">Guest</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     HOME PAGE
+     ============================================================ -->
+<main class="page active" id="page-home">
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="hero-eyebrow">✝ Welcome home</div>
+        <h1>A place to <em>belong</em>, grow, and serve together.</h1>
+        <p class="hero-sub">Grace Community is a family of believers in Arlington Heights. Whether you're exploring faith for the first time or looking for your next study group, there's a seat for you here.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" onclick="goToPage('calendar')">View Bible study schedule</button>
+          <button class="btn btn-ghost" onclick="goToPage('prayer')">Submit a prayer request</button>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-num">412</div>
+            <div class="hero-stat-label">Members</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">18</div>
+            <div class="hero-stat-label">Weekly groups</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">9</div>
+            <div class="hero-stat-label">Years serving Arlington Heights</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <div class="hero-art-ring"></div>
+        <div class="hero-art-shape">
+          <img src="https://images.pexels.com/photos/8468470/pexels-photo-8468470.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Congregation gathered together in worship" />
+        </div>
+        <div class="hero-art-badge">
+          <div class="hero-art-badge-icon">📖</div>
+          <div>
+            <div class="hero-art-badge-title">Sunday Study</div>
+            <div class="hero-art-badge-sub">9:30 AM · Fellowship Hall</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Get connected</div>
+          <h2 class="section-title">Everything your church family needs</h2>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <div class="quick-card">
+          <div class="quick-icon purple">🗓</div>
+          <h3>Calendar &amp; Bible Study</h3>
+          <p>See every service, study, and event — and schedule new Bible study sessions.</p>
+          <a class="quick-link" onclick="goToPage('calendar')" href="#">Open calendar →</a>
+        </div>
+        <div class="quick-card">
+          <div class="quick-icon gold">💬</div>
+          <h3>Discussion Board</h3>
+          <p>Ask questions, share reflections, and grow in faith together online.</p>
+          <a class="quick-link" onclick="goToPage('discussion')" href="#">Join the conversation →</a>
+        </div>
+        <div class="quick-card">
+          <div class="quick-icon purple">📰</div>
+          <h3>News &amp; Events</h3>
+          <p>Stay current on what's happening across our ministries and campus.</p>
+          <a class="quick-link" onclick="goToPage('news')" href="#">See what's new →</a>
+        </div>
+        <div class="quick-card">
+          <div class="quick-icon gold">🙏</div>
+          <h3>Prayer Wall</h3>
+          <p>Submit a request and stand with others in prayer — anonymously if you'd like.</p>
+          <a class="quick-link" onclick="goToPage('prayer')" href="#">Visit the prayer wall →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="wrap">
+      <div class="verse-band">
+        <p class="verse-text">"For where two or three gather in my name, there am I with them."</p>
+        <div class="verse-ref">MATTHEW 18:20</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">This week</div>
+          <h2 class="section-title">Upcoming on the calendar</h2>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="goToPage('calendar')">View full calendar</button>
+      </div>
+      <div class="card" id="homeUpcomingList"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     CALENDAR + BIBLE STUDY PAGE
+     ============================================================ -->
+<main class="page" id="page-calendar">
+  <div class="page-header">
+    <div class="wrap">
+      <div class="eyebrow">Plan ahead</div>
+      <h2 class="section-title">Calendar &amp; Bible Study</h2>
+      <p class="section-sub">Browse everything happening at Grace Community, and schedule new Bible study sessions for your group.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cal-shell">
+        <div class="card">
+          <div class="cal-head">
+            <div class="cal-title" id="calMonthLabel">April 2026</div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" id="calPrev">‹</button>
+              <button class="cal-nav-btn" id="calNext">›</button>
+            </div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+
+        <div class="card">
+          <div class="cal-side-title">All events</div>
+          <div id="calSideList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Bible study</div>
+          <h2 class="section-title">Schedule a session</h2>
+        </div>
+      </div>
+
+      <div class="scheduler-shell">
+        <div class="card">
+          <div class="field">
+            <label>Session title</label>
+            <input type="text" id="inp-title" placeholder="e.g. Book of Romans, Chapter 5" />
+          </div>
+          <div class="field">
+            <label>Leader / facilitator</label>
+            <input type="text" id="inp-leader" placeholder="Pastor or group leader name" />
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="inp-date" />
+          </div>
+          <div class="field">
+            <label>Time</label>
+            <input type="time" id="inp-time" />
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <input type="text" id="inp-location" placeholder="e.g. Fellowship Hall, Room 3" />
+          </div>
+          <div class="field">
+            <label>Format</label>
+            <select id="inp-format">
+              <option value="In-person">In-person</option>
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Notes (optional)</label>
+            <textarea id="inp-notes" placeholder="Passage reference, materials needed, etc."></textarea>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="addSession()">Add session</button>
+        </div>
+
+        <div class="card">
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setFilter('In-person', this)">In-person</button>
+            <button class="filter-btn" onclick="setFilter('Online', this)">Online</button>
+            <button class="filter-btn" onclick="setFilter('Hybrid', this)">Hybrid</button>
+          </div>
+          <div id="session-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     DISCUSSION BOARD PAGE
+     ============================================================ -->
+<main class="page" id="page-discussion">
+  <div class="page-header">
+    <div class="wrap">
+      <div class="eyebrow">Community</div>
+      <h2 class="section-title">Discussion Board</h2>
+      <p class="section-sub">Open to everyone to read. Log in to post a question, reflection, or reply.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap discuss-shell">
+      <div>
+        <div class="card thread-composer">
+          <div class="field">
+            <textarea id="threadInput" placeholder="Share a reflection or ask a question..."></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="postThread()">Post to board</button>
+        </div>
+
+        <div id="threadList"></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="cal-side-title">Board guidelines</div>
+          <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6">
+            Be kind, stay on topic, and keep this a safe space for honest questions. Posting requires an account; reading is open to all.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     NEWS & EVENTS PAGE
+     ============================================================ -->
+<main class="page" id="page-news">
+  <div class="page-header">
+    <div class="wrap">
+      <div class="eyebrow">Stay in the loop</div>
+      <h2 class="section-title">News &amp; Events</h2>
+      <p class="section-sub">Announcements, ministry updates, and what's coming up at Grace Community.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="news-featured" id="newsFeatured"></div>
+      <div class="news-grid" id="newsGrid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     PRAYER WALL PAGE
+     ============================================================ -->
+<main class="page" id="page-prayer">
+  <div class="page-header">
+    <div class="wrap">
+      <div class="eyebrow">Pray together</div>
+      <h2 class="section-title">Prayer Wall</h2>
+      <p class="section-sub">Submit a request — anonymously if you prefer — and join others in praying over what matters most.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="prayer-intro">
+        <div class="card prayer-form">
+          <div class="cal-side-title">Submit a prayer request</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Your name</label>
+              <input type="text" id="prayerName" placeholder="Jane Doe" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div class="checkbox-row" style="padding-top:10px">
+                <input type="checkbox" id="prayerAnon" />
+                <label for="prayerAnon" style="margin:0;font-weight:500">Submit anonymously</label>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Your prayer request</label>
+            <textarea id="prayerText" placeholder="Share what's on your heart..."></textarea>
+          </div>
+          <button class="btn btn-gold btn-block" onclick="submitPrayer()">Submit prayer request</button>
+        </div>
+
+        <div class="card">
+          <div class="cal-side-title">How this works</div>
+          <p style="font-size:0.86rem;color:var(--text-secondary);line-height:1.7">
+            Every request submitted here is visible on the wall below so our church family can pray over it together. Choose "submit anonymously" if you'd rather not share your name. Tap "I'm praying" on any card to let the wall know you've lifted it up.
+          </p>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">The wall</div>
+          <h2 class="section-title" style="font-size:1.4rem">Current requests</h2>
+        </div>
+      </div>
+      <div class="prayer-grid" id="prayerGrid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     ACCOUNT / PROFILE PAGE (logged in)
+     ============================================================ -->
+<main class="page" id="page-profile">
+  <div class="page-header">
+    <div class="wrap">
+      <div class="eyebrow">Your account</div>
+      <h2 class="section-title">Profile &amp; Settings</h2>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap profile-shell">
+      <div class="card profile-card">
+        <div class="profile-avatar-lg" id="profileAvatarLg">G</div>
+        <div class="profile-name" id="profileNameLg">Guest</div>
+        <div class="profile-email" id="profileEmailLg">guest@example.com</div>
+        <button class="btn btn-ghost btn-sm btn-block" onclick="logout()">Log out</button>
+        <div class="profile-stats-row">
+          <div>
+            <div class="profile-stat-num" id="profileThreadCount">0</div>
+            <div class="profile-stat-label">Posts</div>
+          </div>
+          <div>
+            <div class="profile-stat-num" id="profilePrayerCount">0</div>
+            <div class="profile-stat-label">Prayers</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:1.25rem">
+          <div class="cal-side-title">Personal info</div>
+          <div class="field">
+            <label>Display name</label>
+            <input type="text" id="settingsName" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="settingsEmail" />
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save changes</button>
+        </div>
+
+        <div class="card">
+          <div class="cal-side-title">Preferences</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Email me about new prayer requests</div>
+              <div class="settings-sub">Get notified when someone posts to the prayer wall</div>
+            </div>
+            <button class="toggle on" id="toggle1" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Weekly digest</div>
+              <div class="settings-sub">A Friday summary of news and upcoming events</div>
+            </div>
+            <button class="toggle on" id="toggle2" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Show my name on discussion posts</div>
+              <div class="settings-sub">Turn off to post under "Church Member"</div>
+            </div>
+            <button class="toggle" id="toggle3" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand"><span class="brand-mark">✝</span> Grace Community</div>
+        <p style="font-size:0.85rem;line-height:1.6;max-width:32ch">A place to belong, grow, and serve — together, in Arlington Heights.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="#" onclick="goToPage('calendar')">Calendar</a>
+        <a href="#" onclick="goToPage('discussion')">Discussion</a>
+        <a href="#" onclick="goToPage('news')">News &amp; Events</a>
+        <a href="#" onclick="goToPage('prayer')">Prayer Wall</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="#">Plan a visit</a>
+        <a href="#">Give online</a>
+        <a href="#">Contact us</a>
+      </div>
+      <div class="footer-col">
+        <h4>Service times</h4>
+        <a href="#">Sunday — 9:30 &amp; 11:00 AM</a>
+        <a href="#">Wednesday Study — 7:00 PM</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Grace Community Church. Demo build — backend &amp; auth coming soon.</span>
+      <span>Built with care.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     LOGIN / SIGNUP MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="authModalTitle">Welcome back</h3>
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="loginTab" onclick="switchAuthTab('login')">Log in</button>
+      <button class="modal-tab" id="signupTab" onclick="switchAuthTab('signup')">Sign up</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-block" onclick="login()">Log in</button>
+    </div>
+
+    <div id="signupForm" style="display:none">
+      <div class="field">
+        <label>Full name</label>
+        <input type="text" id="signupName" placeholder="Jane Doe" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="signupEmail" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="signupPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-block" onclick="signup()">Create account</button>
+    </div>
+
+    <div class="modal-foot">Demo mode — no real credentials required, this is mock data only.</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span class="toast-icon">✦</span><span id="toastMsg"></span></div>
+
+<script src="app.js"></script>
+</body>
+</html>
